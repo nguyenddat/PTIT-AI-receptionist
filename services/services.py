@@ -1,9 +1,10 @@
+import io
 import base64
 from PIL import Image
-import io
 
 from insightface.app import FaceAnalysis
 from insightface.data import get_image
+
 
 
 def import_model():
@@ -16,3 +17,5 @@ def save_image(image_data, filename = './services/received_image.png'):
     image_binary = base64.b64decode(image_data)
     image = Image.open(io.BytesIO(image_binary))
     image.save(filename)
+
+
