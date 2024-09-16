@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import random
 import uvicorn
 
@@ -6,7 +7,7 @@ from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from services.services import import_model, save_image
-from services.detect_nums_of_people import get_face_embedding, detect_nums_of_people, KNN
+from services.detect_nums_of_people import get_face_embedding, detect_nums_of_people, face_recognition
 
 app = FastAPI()
 app.add_middleware(
@@ -16,7 +17,6 @@ app.add_middleware(
     allow_methods = ["*"],
     allow_headers = ["*"],
 )
-
 
 
 class ConnectionManager:
@@ -48,27 +48,29 @@ def import_data():
     id = 1
 
     faces_data = [
-        ("Nguyen Truong Giang", get_face_embedding("./data/giang.png", model = model)),
-        ("Nguyen Truong Giang", get_face_embedding("./data/giang2.jpg", model = model)),
-        ("Nguyen Truong Giang", get_face_embedding("./data/giang3.jpg", model = model)),
-        ("Duc Dinh", get_face_embedding("./data/dinh.jpg", model = model)),
-        ("Duc Dinh", get_face_embedding("./data/dinh2.jpg", model = model)),
-        ("Dang Sang", get_face_embedding("./data/dangsang.jpg", model = model)),
-        ("Dang Sang", get_face_embedding("./data/dangsang2.jpg", model = model)),
-        ("Dang Sang", get_face_embedding("./data/dangsang3.jpg", model = model)),
-        ("Dang Sang", get_face_embedding("./data/dangsang4.jpg", model = model)),
-        ("Dang Sang", get_face_embedding("./data/dangsang5.jpg", model = model)),
+        ("Nguyễn Trường Giang", get_face_embedding("./data/giang.png", model = model)),
+        ("Nguyễn Trường Giang", get_face_embedding("./data/giang2.jpg", model = model)),
+        ("Nguyễn Trường Giang", get_face_embedding("./data/giang3.jpg", model = model)),
+        ("Đức Định", get_face_embedding("./data/dinh.jpg", model = model)),
+        ("Đức Định", get_face_embedding("./data/dinh2.jpg", model = model)),
+        ("Đăng Sang", get_face_embedding("./data/dangsang.jpg", model = model)),
+        ("Đăng Sang", get_face_embedding("./data/dangsang2.jpg", model = model)),
+        ("Đăng Sang", get_face_embedding("./data/dangsang3.jpg", model = model)),
+        ("Đăng Sang", get_face_embedding("./data/dangsang4.jpg", model = model)),
+        ("Đăng Sang", get_face_embedding("./data/dangsang5.jpg", model = model)),
         ("Nam", get_face_embedding("./data/nam.jpg", model = model)),
         ("Nam", get_face_embedding("./data/nam2.jpg", model = model)),
         ("Nam", get_face_embedding("./data/nam3.jpg", model = model)),
-        ("Dat", get_face_embedding("./data/IMG_4050.JPG", model = model))
+        ("Đạt", get_face_embedding("./data/IMG_4050.JPG", model = model))
     ]
+
     for i in range(len(faces_data)):
-        person = list(faces_data[i])
+        person = faces_data[i]
+
         res = {
             "id": id,
             "name": person[0],
-            "embedding": person[1]
+            "embedding": person[1] if person[1] is not None else [np.zeros(512)]
         }
         role = random.choice(roles)
         res.update({"role": role})
@@ -93,8 +95,11 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             save_image(data)
             nums_of_people = detect_nums_of_people('./services/received_image.png', model)
-            names = KNN('./services/received_image.png', model, faces_data)
-            await manager.send_response({"nums_of_people": nums_of_people, "person_datas": names}, websocket)
+            if nums_of_people != 0:
+                names = face_recognition('./services/received_image.png', model = model, faces_data = faces_data)
+                await manager.send_response({"nums_of_people": nums_of_people, "person_datas": names}, websocket)
+            else:
+                await manager.send_response({"nums_of_people": nums_of_people, "person_datas": []}, websocket)
     except Exception as err:
         print(f'Error: {err}')
 
@@ -102,4 +107,4 @@ async def websocket_endpoint(websocket: WebSocket):
 async def root():
     return {"message": "websocket server is running. Connect to /ws for websocket communication"}
 
-uvicorn.run(app, host = "192.168.10.14", port = 5050)
+uvicorn.run(app, host = "192.168.10.12", port = 5050)

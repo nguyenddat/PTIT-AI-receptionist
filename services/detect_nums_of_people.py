@@ -9,7 +9,10 @@ def get_face_embedding(img_path, model):
     
     if len(faces) == 0:
         return 
-    return faces[0].embedding
+    face_embeddings = []
+    for face in faces:
+        face_embeddings.append(face.embedding)
+    return face_embeddings
 
 def detect_nums_of_people(img_path, model):
     img = cv2.imread(img_path)
@@ -38,7 +41,7 @@ def calc_cosine_similarity(embedding, faces_data):
         person = []
         for key in _.keys():
             if key == "embedding":
-                face_embedding = _["embedding"]
+                face_embedding = _["embedding"][0]
                 cosine_sim = cosine_similarity(embedding, face_embedding)
                 person.append(cosine_sim)
             else:
@@ -47,9 +50,7 @@ def calc_cosine_similarity(embedding, faces_data):
     res = [ _ for _ in res if _[2] > 0.35]
     return sorted(res, key = lambda x: x[2], reverse = True)
 
-def KNN(img_path, model, faces_data):
-    embedding = get_face_embedding(img_path, model)
-
+def KNN(embedding, faces_data):
     sorted_distance = calc_cosine_similarity(embedding, faces_data)
     if len(sorted_distance) > 5:
         closest_5_embed = sorted_distance[0:5:1]
@@ -76,4 +77,11 @@ def KNN(img_path, model, faces_data):
             "name": "Khách",
             "role": "Khách"
         }]
-    
+
+def face_recognition(img_path, model, faces_data):
+    face_embeddings = get_face_embedding(img_path, model)
+    res = []
+    for face_embedding in face_embeddings:
+        person = KNN(face_embedding, faces_data)
+        res.append(person)
+    return res
