@@ -88,7 +88,13 @@
     - *Dữ liệu trả về:*
     ```json
     {
-        "response": "Upload successfully!" hoặc "Thông tin của quý khách đã tồn tại" hoặc "err"
+        "response": "Upload successfully!" 
+    }
+    {
+        "response": "Thông tin của quý khách đã tồn tại"
+    }
+    {
+        "response": "err"
     }
     ```
 
