@@ -88,7 +88,7 @@
 
 ### <GET> "/api/get-all-data": 
 Trả về toàn bộ thông tin của khách hàng đã lưu
-**Dữ liệu trả về:**   
+_Dữ liệu trả về:_   
 ```json
 [
     {
@@ -105,21 +105,22 @@ Trả về toàn bộ thông tin của khách hàng đã lưu
 
 ## Face recognition gồm các API:
 ### <WebSocket> "/ws": 
-Trả liên tục thông tin của khách hàng xuất hiện trước camera
-    **Dữ liệu nhận: b64** 
-    **Dữ liệu trả về:**  
-        **Số lượng người:** 
+Trả liên tục thông tin của khách hàng xuất hiện trước camera\\
+_Dữ liệu nhận: b64_\\ 
+_Dữ liệu trả về:_\\  
+    _- Số lượng người:_ 
         ```json
         {"nums_of_people": "int"}
         ```
-**Thông tin khách hàng:** 
-```json
-{"person_datas": "names"}
-```
-**hoặc**
-```json
-{"person_datas": "names"}
-``` 
+    _- Thông tin khách hàng:_ 
+        ```json
+        {"person_datas": "names"}
+        ```
+        ```json
+        {"person_datas": "names"}
+        ``` 
+
+Thông tin names được lưu như sau:
 **names:**
 ```json 
     [{"name1": "name1", "role1": "role1"}, {"name2": "name2", "role2": "role2"}, ...]
