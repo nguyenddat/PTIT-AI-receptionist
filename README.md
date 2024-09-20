@@ -1,4 +1,4 @@
-# File struture:
+# File struture
 ```bash
 ├── app                             # "app" is a Python package
 │   ├── __init__.py                 # this file makes "app" a "Python package"
@@ -18,110 +18,122 @@
 ├── README.md                       
 ├── requirement.txt                           
 ```
-# Quản lý API/ websocket:
-## Access data gồm các API:
-### <GET/ WebSocket> "/api/get-identity" 
-- nhận thông tin được post từ máy đọc cccd và đẩy thẳng sang máy khách thông qua websocket đã kết nối từ trước đó.
-    - **Dữ liệu nhận:** 
+
+
+
+## Quản lý API/WebSocket
+
+### Access Data API
+
+#### `<GET/ WebSocket> /api/get-identity`
+- Nhận thông tin được post từ máy đọc CCCD và đẩy thẳng sang máy khách thông qua WebSocket đã kết nối từ trước đó.
+    - *Dữ liệu nhận:*
     ```json
     {
-        "Identity Code" : "",
-        "Name" : "",
-        "DOB" : "",
-        "Gender" : "",
-        "Nationality" : "",
-        "Ethnic" : "",
-        "Religion" : "",
-        "Hometown" : "",
-        "Permanent Address" : "",
-        "Identifying Features" : "",
-        "Card Issuance Date" : "",
-        "Expiration Date" : "",
+        "Identity Code": "",
+        "Name": "",
+        "DOB": "",
+        "Gender": "",
+        "Nationality": "",
+        "Ethnic": "",
+        "Religion": "",
+        "Hometown": "",
+        "Permanent Address": "",
+        "Identifying Features": "",
+        "Card Issuance Date": "",
+        "Expiration Date": ""
     }
     ```
-    - **Dữ liệu trả về:**
-    ```json 
+    - *Dữ liệu trả về:*
+    ```json
     {
-        "Identity Code" : "",
-        "Name" : "",
-        "DOB" : "",
-        "Gender" : "",
-        "Nationality" : "",
-        "Ethnic" : "",
-        "Religion" : "",
-        "Hometown" : "",
-        "Permanent Address" : "",
-        "Identifying Features" : "",
-        "Card Issuance Date" : "",
-        "Expiration Date" : "",
+        "Identity Code": "",
+        "Name": "",
+        "DOB": "",
+        "Gender": "",
+        "Nationality": "",
+        "Ethnic": "",
+        "Religion": "",
+        "Hometown": "",
+        "Permanent Address": "",
+        "Identifying Features": "",
+        "Card Issuance Date": "",
+        "Expiration Date": ""
     }
     ```
 
-### <POST> "/api/post-personal-img": 
-- nhận thông tin của khách hàng nhằm đăng ký và lưu dữ liệu khách hàng cho mục đích nhận diện sau đó.
-- **Dữ liệu nhận:**
-```json 
-{
-    "b64_img": ["b64", "b64", "b64"],
-    "cccd": {
-                "Identity Code" : "",
-                "Name" : "",
-                "DOB" : "",
-                "Gender" : "",
-                "Nationality" : "",
-                "Ethnic" : "",
-                "Religion" : "",
-                "Hometown" : "",
-                "Permanent Address" : "",
-                "Identifying Features" : "",
-                "Card Issuance Date" : "",
-                "Expiration Date" : "",
-            },
-    "role": ""
-}
-```
-
-**Dữ liệu trả về:** 
-```json 
-{"response": "Upload successully!" || "Thông tin của quý khách đã tồn tại" || err}
-```
-
-### <GET> "/api/get-all-data": 
-Trả về toàn bộ thông tin của khách hàng đã lưu
-_Dữ liệu trả về:_   
-```json
-[
+#### `<POST> /api/post-personal-img`
+- Nhận thông tin của khách hàng nhằm đăng ký và lưu dữ liệu khách hàng cho mục đích nhận diện sau đó.
+    - *Dữ liệu nhận:*
+    ```json
     {
-        "embedding": "đường dẫn đến file txt lưu embedding"
-        "Identity Code": ""
-        "Name": ""
-        "DOB": ""
-        "Gender": ""
-        "Hometown": ""
+        "b64_img": ["b64", "b64", ....],
+        "cccd": {
+            "Identity Code": "",
+            "Name": "",
+            "DOB": "",
+            "Gender": "",
+            "Nationality": "",
+            "Ethnic": "",
+            "Religion": "",
+            "Hometown": "",
+            "Permanent Address": "",
+            "Identifying Features": "",
+            "Card Issuance Date": "",
+            "Expiration Date": ""
+        },
         "role": ""
     }
-]
-```
+    ```
+    - *Dữ liệu trả về:*
+    ```json
+    {
+        "response": "Upload successfully!" hoặc "Thông tin của quý khách đã tồn tại" hoặc "err"
+    }
+    ```
 
-## Face recognition gồm các API:
-### <WebSocket> "/ws": 
-Trả liên tục thông tin của khách hàng xuất hiện trước camera\\
-_Dữ liệu nhận: b64_\\ 
-_Dữ liệu trả về:_\\  
-    _- Số lượng người:_ 
-        ```json
-        {"nums_of_people": "int"}
-        ```
-    _- Thông tin khách hàng:_ 
-        ```json
-        {"person_datas": "names"}
-        ```
-        ```json
-        {"person_datas": "names"}
-        ``` 
+#### `<GET> /api/get-all-data`
+- Trả về toàn bộ thông tin của khách hàng đã lưu.
+    - *Dữ liệu trả về:*
+    ```json
+    [
+        {
+            "embedding": "đường dẫn đến file txt lưu embedding",
+            "Identity Code": "",
+            "Name": "",
+            "DOB": "",
+            "Gender": "",
+            "Hometown": "",
+            "role": ""
+        }
+    ]
+    ```
 
-Thông tin names được lưu như sau:
-**names:**
-```json 
-    [{"name1": "name1", "role1": "role1"}, {"name2": "name2", "role2": "role2"}, ...]
-```
+### Face Recognition API
+
+#### `<WebSocket> /ws`
+- Trả liên tục thông tin của khách hàng xuất hiện trước camera.
+    - *Dữ liệu nhận:* `b64`
+    - *Dữ liệu trả về:*
+        - *Số lượng người:*
+        ```json
+        {
+            "nums_of_people": "nums_of_people"
+        }
+        ```
+        - *Thông tin khách hàng:*
+        ```json
+        {
+            "person_datas": [
+                {
+                    "name1": "name1",
+                    "role1": "role1"
+                },
+                {
+                    "name2": "name2",
+                    "role2": "role2"
+                },
+                ...
+            ]
+        }
+        ```
