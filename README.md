@@ -67,7 +67,7 @@
     - *Dữ liệu nhận:*
     ```json
     {
-        "b64_img": ["b64", "b64", ....],
+        "b64_img": ["b64", "b64"],
         "cccd": {
             "Identity Code": "",
             "Name": "",
