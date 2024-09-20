@@ -59,59 +59,60 @@
 
 ### <POST> "/api/post-personal-img": 
 - nhận thông tin của khách hàng nhằm đăng ký và lưu dữ liệu khách hàng cho mục đích nhận diện sau đó.
-    - **Dữ liệu nhận:**
-    ```json 
-    {
-        "b64_img": ["b64", "b64", "b64"],
-        "cccd": {
-                    "Identity Code" : "",
-                    "Name" : "",
-                    "DOB" : "",
-                    "Gender" : "",
-                    "Nationality" : "",
-                    "Ethnic" : "",
-                    "Religion" : "",
-                    "Hometown" : "",
-                    "Permanent Address" : "",
-                    "Identifying Features" : "",
-                    "Card Issuance Date" : "",
-                    "Expiration Date" : "",
-                },
-        "role": ""
-    }
-    ```
-    - **Dữ liệu trả về:** 
-    ```json 
-    {"response": "Upload successully!" || "Thông tin của quý khách đã tồn tại" || err}
-    ```
+- **Dữ liệu nhận:**
+```json 
+{
+    "b64_img": ["b64", "b64", "b64"],
+    "cccd": {
+                "Identity Code" : "",
+                "Name" : "",
+                "DOB" : "",
+                "Gender" : "",
+                "Nationality" : "",
+                "Ethnic" : "",
+                "Religion" : "",
+                "Hometown" : "",
+                "Permanent Address" : "",
+                "Identifying Features" : "",
+                "Card Issuance Date" : "",
+                "Expiration Date" : "",
+            },
+    "role": ""
+}
+```
+
+**Dữ liệu trả về:** 
+```json 
+{"response": "Upload successully!" || "Thông tin của quý khách đã tồn tại" || err}
+```
 
 ### <GET> "/api/get-all-data": 
-- trả về toàn bộ thông tin của khách hàng đã lưu
-    - **Dữ liệu trả về:**   
-    ```json
-    [
-        {
-            "embedding": "đường dẫn đến file txt lưu embedding"
-            "Identity Code": ""
-            "Name": ""
-            "DOB": ""
-            "Gender": ""
-            "Hometown": ""
-            "role": ""
-        }
-    ]
-    ```
+Trả về toàn bộ thông tin của khách hàng đã lưu
+**Dữ liệu trả về:**   
+```json
+[
+    {
+        "embedding": "đường dẫn đến file txt lưu embedding"
+        "Identity Code": ""
+        "Name": ""
+        "DOB": ""
+        "Gender": ""
+        "Hometown": ""
+        "role": ""
+    }
+]
+```
 
 ## Face recognition gồm các API:
 ### <WebSocket> "/ws": 
 Trả liên tục thông tin của khách hàng xuất hiện trước camera
-**Dữ liệu nhận: b64** 
-**Dữ liệu trả về:**  
-    **Số lượng người:** 
-```json
-{"nums_of_people": "int"}
-```
-        **Thông tin khách hàng:** 
+    **Dữ liệu nhận: b64** 
+    **Dữ liệu trả về:**  
+        **Số lượng người:** 
+        ```json
+        {"nums_of_people": "int"}
+        ```
+**Thông tin khách hàng:** 
 ```json
 {"person_datas": "names"}
 ```
