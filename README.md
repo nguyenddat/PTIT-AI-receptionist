@@ -62,7 +62,7 @@
     - **Dữ liệu nhận:**
     ```json 
     {
-        "b64_img": [b64, b64, ....],
+        "b64_img": ["b64", "b64", "b64"],
         "cccd": {
                     "Identity Code" : "",
                     "Name" : "",
@@ -91,7 +91,7 @@
     ```json
     [
         {
-            "embedding": đường dẫn đến file txt lưu embedding
+            "embedding": "đường dẫn đến file txt lưu embedding"
             "Identity Code": ""
             "Name": ""
             "DOB": ""
@@ -104,18 +104,22 @@
 
 ## Face recognition gồm các API:
 ### <WebSocket> "/ws": 
-- trả liên tục thông tin của khách hàng xuất hiện trước camera
-    - **Dữ liệu nhận: b64** 
-    - **Dữ liệu trả về:**  
-        + **Số lượng người:** 
-        ```json
-        {"nums_of_people": int}
-        ```
-        + **Thông tin khách hàng:** 
-        ```json
-        {"person_datas": names || []}
-        ```
-        + **names:**
-        ```json 
-            [{"name1": name1, "role1": role1}, {"name2": name2, "role2": role2}, ...]
-        ```
+Trả liên tục thông tin của khách hàng xuất hiện trước camera
+**Dữ liệu nhận: b64** 
+**Dữ liệu trả về:**  
+    **Số lượng người:** 
+```json
+{"nums_of_people": "int"}
+```
+        **Thông tin khách hàng:** 
+```json
+{"person_datas": "names"}
+```
+**hoặc**
+```json
+{"person_datas": "names"}
+``` 
+**names:**
+```json 
+    [{"name1": "name1", "role1": "role1"}, {"name2": "name2", "role2": "role2"}, ...]
+```
