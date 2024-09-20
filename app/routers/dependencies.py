@@ -1,0 +1,325 @@
+import io
+import cv2
+import json
+import base64
+import codecs
+import numpy as np
+from PIL import Image
+from collections import Counter
+
+from insightface.app import FaceAnalysis
+from insightface.data import get_image
+
+# -------------------------------------SERVICES----------------------------------------------
+def import_model():
+    model = FaceAnalysis(name = 'buffalo_l')
+    model.prepare(ctx_id = 0, det_size = (640, 640))
+    return model
+
+def save_image(image_data, filename = './routers/received_img.png'):
+    image_data = image_data.split(',')[1]
+    image_binary = base64.b64decode(image_data)
+    image = Image.open(io.BytesIO(image_binary))
+    image.save(filename)
+
+def import_data():
+    try:
+        with open('./data/data.json', 'r') as file:
+            return json.load(file)
+    except Exception as err:
+        print(f"FOUND ERROR From import_data(): {err}")
+        return {}
+
+# --------------------------------------------------------FACE_RECOGNITION--------------------------------------------------
+
+def get_face_embedding(img_path, model):
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    faces = model.get(img)
+    
+    if len(faces) == 0:
+        return 
+    face_embeddings = []
+    for face in faces:
+        face_embeddings.append(face.embedding)
+    return face_embeddings
+
+def save_personal_data(img_path, model, personal_data):
+    embedding = get_face_embedding(img_path, model)
+    with open('./data/data.json', 'r', encoding = 'utf-8') as file:
+        exist_data = json.load(file)
+    
+    for file in os.listdir(img_path):
+        path = os.path.join(img_path, file)
+        embedding = get_face_embedding(path, model)[0]
+        embed_path = os.path.join(img_path, f'{file[:len(file)-4:]}.txt')
+        data = {'embedding': embed_path}
+        np.savetxt(embed_path, embedding)
+        
+        for key, value in personal_data.items():
+            data.update({key: value})
+        exist_data.append(data)
+
+    with open('./data/data.json', 'w', encoding = 'utf-8') as f:
+        json.dumps(exist_data, f)
+
+
+def detect_nums_of_people(img_path, model):
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    faces = model.get(img)
+    print(f'Có {len(faces)} trong khung hình!')
+    return len(faces)
+
+def cosine_similarity(a, b):
+    if a is None or b is None: return 0
+
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+
+    if norm_a == 0 or norm_b == 0: return 0
+
+    return np.dot(a, b) / (norm_a * norm_b)
+
+
+def calc_cosine_similarity(embedding, faces_data):
+    res = []
+    for _ in faces_data:
+        person = {}
+        for key in _.keys():
+            if key == "embedding":
+                face_embedding = np.loadtxt(_["embedding"], dtype = "float64")
+                cosine_sim = cosine_similarity(embedding, face_embedding)
+                person.update({"embedding": cosine_sim})
+            else:
+                person.update({key: _[key]})
+        res.append(person)
+    res = [ _ for _ in res if _["embedding"] > 0.35]
+    return sorted(res, key = lambda x: x["embedding"], reverse = True)
+
+def KNN(embedding, faces_data):
+    sorted_distance = calc_cosine_similarity(embedding, faces_data)
+    if len(sorted_distance) > 5:
+        closest_5_embed = sorted_distance[0:5:1]
+    else:
+        closest_5_embed = sorted_distance
+    names = [item["Name"] for item in closest_5_embed]
+    name_counts = Counter(names)
+    try:
+        most_name = name_counts.most_common(1)[0][0]
+        most_list = [ _ for _ in closest_5_embed if _["Name"] == most_name]
+        most_list.sort(key = lambda x: x["embedding"], reverse = True)
+        result = most_list[0]
+        result = {
+            "name": result["Name"],
+            "role": result['role']
+        }
+        print(f'Tìm thấy: {result}')
+        return result
+    except:
+        result = {
+            "name": "Khách",
+            "role": "Khách"
+        }
+        print(f'Tìm thấy: {result}')
+        return result
+
+def face_recognition(img_path, model, faces_data):
+    face_embeddings = get_face_embedding(img_path, model)
+    res = []
+    for face_embedding in face_embeddings:
+        person = KNN(face_embedding, faces_data)
+        res.append(person)
+    return res
+
+# -----------------------------------------DECODE_CCCD----------------------------------------
+
+tagIndex = {
+        "020101": "Identity Code",
+        "020102": "Name",
+        "020103": "DOB",
+        "020104": "Gender",
+        "020105": "Nationality",
+        "020106": "Ethnic",
+        "020107": "Religion",
+        "020108": "Hometown",
+        "020109": "Permanent Address",
+        "02010A": "Identifying Features",
+        "02010B": "Card Issuance Date",
+        "02010C": "Expiration Date",
+        "02010D": "Parents' Names"
+    }
+
+def extract_data(data):
+
+    so_cccd = ""
+    ten = ""
+    data_extract = {
+        "Identity Code" : "",
+        "Name" : "",
+        "DOB" : "",
+        "Gender" : "",
+        "Nationality" : "",
+        "Ethnic" : "",
+        "Religion" : "",
+        "Hometown" : "",
+        "Permanent Address" : "",
+        "Identifying Features" : "",
+        "Card Issuance Date" : "",
+        "Expiration Date" : "",
+    }
+
+
+
+    data_all = ""
+    for i in data:
+        data_all = data_all + " " +  i
+    # print(data_all)
+
+    # hexBytes = bytes.fromhex(data_all)
+
+    # print(hexBytes)
+
+    offset = 0
+
+    # while (offset < 2000):
+    #     if (data_all):
+    #         break
+    #     offset +=1
+    while (offset < 2000):
+
+        # GET CCCD
+        try:
+            if not data_extract.get("Identity Code") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "01":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Identity Code"] = data_tmp
+        except:
+            pass
+        # GET Tên
+        try:
+            if not data_extract.get("Name") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "02":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Name"] = data_tmp
+        except:
+            pass
+        # GET DOB
+        try:
+            if not data_extract.get("DOB") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "03":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["DOB"] = data_tmp
+        except:
+            pass
+
+        # GET Gender
+        try:
+            if not data_extract.get("Gender") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "04":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Gender"] = data_tmp
+        except:
+            pass
+
+        # GET Nationality
+        try:
+            if not data_extract.get("Nationality") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "05":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Nationality"] = data_tmp
+        except:
+            pass
+
+        # GET Ethnic
+        try:
+            if not data_extract.get("Ethnic") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "06":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Ethnic"] = data_tmp
+        except:
+            pass
+
+        # GET Religion
+        try:
+            if not data_extract.get("Religion") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "07":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Religion"] = data_tmp
+        except:
+            pass
+
+        # GET Hometown
+        try:
+            if not data_extract.get("Hometown") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "08":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Hometown"] = data_tmp
+        except:
+            pass
+
+        # GET Permanent Address
+        try:
+            if not data_extract.get("Permanent Address") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "09":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Permanent Address"] = data_tmp
+        except:
+            pass
+
+        # GET Identifying Features
+        try:
+            if not data_extract.get("Identifying Features") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "0A":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Identifying Features"] = data_tmp
+        except:
+            pass
+
+
+        # GET Card Issuance Date
+        try:
+            if not data_extract.get("Card Issuance Date") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "0B":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Card Issuance Date"] = data_tmp
+        except:
+            pass
+
+        # GET Card Expiration Date
+        try:
+            if not data_extract.get("Expiration Date") and str(data[offset]) == "30" and  str(data[offset + 2]) == "02" and  str(data[offset + 3]) == "01" and  str(data[offset + 4]) == "0C":
+                data_tmp = ""
+                for i in range(int(data[offset + 6], 16)):
+                    data_tmp = data_tmp +  data[offset + 7 + i]
+                data_tmp = str(codecs.decode(data_tmp, 'hex').decode('utf-8'))
+                data_extract["Expiration Date"] = data_tmp
+        except:
+            pass
+        
+        offset +=1
+    # result_string = hexBytes.decode("utf-8")
+    return data_extract
