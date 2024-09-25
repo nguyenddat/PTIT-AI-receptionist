@@ -1,20 +1,16 @@
-import logging
-import uvicorn
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+import json
+from typing import List, AnyStr
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 
-from .base_model import ConnectionManager
-from .dependencies import save_image, import_model, import_data
-from .dependencies import face_recognition, detect_nums_of_people
+from services.base_model import ConnectionManager
+from services.dependencies import save_image, import_model, import_data, extract_data
+from services.dependencies import face_recognition, detect_nums_of_people
 
 router = APIRouter()
 model = import_model()
 manager = ConnectionManager()
 TARGET_WEBSOCKET = None
 faces_data = import_data()
-
-
-LOG = logging.getLogger(__name__)
-LOG.info(uvicorn.Config.asgi_version)
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -26,9 +22,9 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             save_image(data)
-            nums_of_people = detect_nums_of_people('./routers/received_image.png', model)
+            nums_of_people = detect_nums_of_people('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/services/received_img.png', model)
             if nums_of_people != 0:
-                names = face_recognition('./routers/received_image.png', model = model, faces_data = faces_data)
+                names = face_recognition('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/services/received_img.png', model = model, faces_data = faces_data)
                 await manager.send_response({
                     "key": "webcam", 
                     "value": {"nums_of_people": nums_of_people, "person_datas": names}}, websocket)
@@ -39,4 +35,23 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         TARGET_WEBSOCKET = None
     except Exception as err:
-        LOG.error(err)
+        raise HTTPException(status_code = 502, detail = err)
+
+@router.post("/api/get-identity")
+async def get_identity(
+    data: List[AnyStr]
+    # DỮ LIỆU ĐƯỢC ĐỊNH DẠNG:
+        # list(str)
+):
+    global TARGET_WEBSOCKET, manager
+    try:
+        if not TARGET_WEBSOCKET:
+            raise HTTPException(status_code = 503, detail = "Chưa có ai kết nối đến máy chủ!")
+        
+        decoded_data = extract_data(data)
+        await manager.send_response({
+            "key": "cccd",
+            "value": json.dumps(decoded_data)
+        }, TARGET_WEBSOCKET)
+    except Exception as err:
+        raise HTTPException(status_code = 503, detail = err)

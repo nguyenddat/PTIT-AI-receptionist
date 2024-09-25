@@ -1,38 +1,12 @@
 import os
-import json
-import logging
-import uvicorn
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from typing import Dict, List, AnyStr
 
-from .dependencies import extract_data, import_data
-from .dependencies import save_image, save_personal_data
-from .face_recognition import model, TARGET_WEBSOCKET, manager, faces_data
+from services.dependencies import import_data, png_to_base64
+from services.dependencies import save_image, save_personal_data, get_face_embedding
+from .face_recognition import model, faces_data
 
 router = APIRouter()
-
-LOG = logging.getLogger(__name__)
-LOG.info(uvicorn.Config.asgi_version)
-
-@router.post("/api/get-identity")
-async def get_identity(
-    data: List[AnyStr]
-    # DỮ LIỆU ĐƯỢC ĐỊNH DẠNG:
-        # list(str)
-):
-    global TARGET_WEBSOCKET, manager
-    try:
-        if not TARGET_WEBSOCKET:
-            raise HTTPException(status_code = 503, detail = "Chưa có ai kết nối đến máy chủ!")
-        
-        decoded_data = extract_data(data)
-        await manager.send_response({
-            "key": "cccd",
-            "value": json.dumps(decoded_data)
-        }, TARGET_WEBSOCKET)
-    except Exception as err:
-        print(f"STATUS CODE: 503 / {err}")
-        raise HTTPException(status_code = 503, detail = "err")
 
 @router.post('/api/post-personal-img')
 async def post_personal_img(
@@ -53,7 +27,7 @@ async def post_personal_img(
         personal_id = personal_data['Identity Code']
         personal_data.update({'role': role})
 
-        save_img_path = os.path.join('./data/img', personal_id)
+        save_img_path = os.path.join('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img', personal_id)
         if os.path.exists(save_img_path):
             raise HTTPException(status_code = 505, detail = "Thông tin của quý khách đã tồn tại!")
         else:
@@ -63,6 +37,9 @@ async def post_personal_img(
         for img in b64_img:
             img_path = os.path.join(save_img_path, f'{name} {str(id)}.png')
             save_image(img, img_path)
+            faces = get_face_embedding(img_path)
+            if len(faces) != 1:
+                return {"response": "Ảnh không đạt điều kiện!"}, 506
             id += 1
 
         return {"response": "Upload successfully!"}, 200
@@ -76,7 +53,23 @@ async def post_personal_img(
 @router.get("/api/get-all-data")
 async def get_all_data():
     try:
-        return faces_data, 200
+        data_return = []
+        for face in faces_data:
+            image_data = []
+            identity_code = face["Identity Code"]
+            path = os.path.join("/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img", identity_code)
+            for file in os.listdir(path):
+                if file.endswith('.png'):
+                    image_data.append(png_to_base64(os.path.join(path, file)))
+            data_return.append({
+                "name": face["Name"],
+                "identity_code": identity_code,
+                "role": face["role"],
+                "dob": face["DOB"],
+                "gender": face["Gender"],
+                "image_data": image_data
+            })
+        return data_return, 200
     except Exception as err:
         print(f"STATUS CODE: 507 / {err}")
         raise HTTPException(status_code = 507, detail = err)

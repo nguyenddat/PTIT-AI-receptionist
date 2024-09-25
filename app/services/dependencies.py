@@ -1,5 +1,8 @@
 import io
+import os
+import re
 import cv2
+import docx
 import json
 import base64
 import codecs
@@ -14,17 +17,22 @@ from insightface.data import get_image
 def import_model():
     model = FaceAnalysis(name = 'buffalo_l')
     model.prepare(ctx_id = 0, det_size = (640, 640))
+    os.system('cls||clear')
     return model
 
-def save_image(image_data, filename = './routers/received_img.png'):
+def save_image(image_data, filename = '/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/services/received_img.png'):
     image_data = image_data.split(',')[1]
     image_binary = base64.b64decode(image_data)
     image = Image.open(io.BytesIO(image_binary))
     image.save(filename)
 
+def png_to_base64(png_file):
+    with open(png_file, "rb") as file:
+        return base64.b64encode(file.read()).decode('utf-8')
+
 def import_data():
     try:
-        with open('./data/data.json', 'r') as file:
+        with open('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img/data.json', 'r') as file:
             return json.load(file)
     except Exception as err:
         print(f"FOUND ERROR From import_data(): {err}")
@@ -46,7 +54,7 @@ def get_face_embedding(img_path, model):
 
 def save_personal_data(img_path, model, personal_data):
     embedding = get_face_embedding(img_path, model)
-    with open('./data/data.json', 'r', encoding = 'utf-8') as file:
+    with open('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img/data.json', 'r', encoding = 'utf-8') as file:
         exist_data = json.load(file)
     
     for file in os.listdir(img_path):
@@ -60,7 +68,7 @@ def save_personal_data(img_path, model, personal_data):
             data.update({key: value})
         exist_data.append(data)
 
-    with open('./data/data.json', 'w', encoding = 'utf-8') as f:
+    with open('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img/data.json', 'w', encoding = 'utf-8') as f:
         json.dumps(exist_data, f)
 
 
@@ -323,3 +331,87 @@ def extract_data(data):
         offset +=1
     # result_string = hexBytes.decode("utf-8")
     return data_extract
+
+# -----------------------------READ FILE DOCX----------------------------------
+def b64_to_docx(text):
+    docx_data = base64.b64decode(text)
+    with open("/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/lichTuan/lichTuan.docx", "wb") as file:
+        file.write(docx_data)
+
+
+def read_docx(file_path = "/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/lichTuan/lichTuan.docx"):
+    doc = docx.Document(file_path)
+    full_text = []
+
+    for para in doc.paragraphs:
+        if para.text.strip():
+            full_text.append(para.text.strip())
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                cell_text = cell.text.strip()
+                if cell_text:
+                    full_text.append(cell_text)
+
+    return '\n'.join(full_text)
+
+def parse_schedule(text):
+    date_pattern = r'(Thứ\s+\w+,?\s*ngày\s+\d{1,2}/\d{1,2})'
+    time_event_pattern = r'(\d{2}[:.]\d{2}): (.+)'
+    location_pattern = r'DD: (.+)'
+    attendees_pattern = r'TP: (.+)'
+    preparation_pattern = r'C/b: (.+)'
+
+    schedule = []
+    current_date = ""
+    current_event = None
+    unique_events = set()
+
+    lines = text.split("\n")
+
+    for line in lines:
+        date_match = re.search(date_pattern, line)
+        if date_match:
+            current_date = date_match.group(1).replace("  ", " ")  
+            continue
+
+        time_event_match = re.search(time_event_pattern, line)
+        if time_event_match:
+            if current_event:
+                event_tuple = tuple(sorted(current_event.items()))
+                if event_tuple not in unique_events:
+                    schedule.append(current_event)
+                    unique_events.add(event_tuple)
+            
+            current_event = {
+                'date': current_date,
+                'time': time_event_match.group(1),
+                'event': time_event_match.group(2).strip(),
+                'location': '',
+                'attendees': '',
+                'preparation': ''
+            }
+        elif current_event:
+            location_match = re.search(location_pattern, line)
+            if location_match:
+                current_event['location'] = location_match.group(1).strip()
+            
+            attendees_match = re.search(attendees_pattern, line)
+            if attendees_match:
+                current_event['attendees'] = attendees_match.group(1).strip()
+            
+            preparation_match = re.search(preparation_pattern, line)
+            if preparation_match:
+                current_event['preparation'] = preparation_match.group(1).strip()
+
+    if current_event:
+        event_tuple = tuple(sorted(current_event.items()))
+        if event_tuple not in unique_events:
+            schedule.append(current_event)
+
+    return schedule
+
+def save_to_json(schedule, output_file = "/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/lichTuan/lichTuan.json"):
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(schedule, f, ensure_ascii=False, indent=4)

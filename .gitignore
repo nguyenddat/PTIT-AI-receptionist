@@ -3,3 +3,6 @@ data/
 img/
 .png
 .json
+.txt
+.db 
+.env
