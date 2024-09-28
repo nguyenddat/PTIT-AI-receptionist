@@ -1,9 +1,5 @@
 import json
 from fastapi import WebSocket
-from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String
-
-from database.database import Base
 
 class ConnectionManager:
     def __init__(self):
@@ -23,25 +19,3 @@ class ConnectionManager:
     async def broadcast(self, response: dict):
         for connection in self.active_connections:
             await connection.send_text(json.dumps(response))
-            
-class UserCreate(BaseModel):
-    username: str
-    password: str
-
-class UserOut(BaseModel):
-    id: int
-    username: str
-
-    class Config:
-        orm_mode = True
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password = Column(String)

@@ -22,9 +22,9 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             save_image(data)
-            nums_of_people = detect_nums_of_people('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/services/received_img.png', model)
+            nums_of_people = detect_nums_of_people('./services/received_img.png', model)
             if nums_of_people != 0:
-                names = face_recognition('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/services/received_img.png', model = model, faces_data = faces_data)
+                names = face_recognition('./services/received_img.png', model = model, faces_data = faces_data)
                 await manager.send_response({
                     "key": "webcam", 
                     "value": {"nums_of_people": nums_of_people, "person_datas": names}}, websocket)

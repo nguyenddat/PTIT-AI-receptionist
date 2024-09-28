@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from services.base_model import User, UserCreate, Token, UserOut
-from internal.admin import create_access_token, hash_password, verify_password
+from database.models import User, UserCreate, Token, UserOut
+from internal.admin import create_access_token, hash_password, verify_password, SECRET_KEY, ALGORITHM
 from database.database import SessionLocal
 
 router = APIRouter()
@@ -25,7 +25,7 @@ def verify_token(token: str, db: Session = Depends(get_db)):
     )
     
     try:
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

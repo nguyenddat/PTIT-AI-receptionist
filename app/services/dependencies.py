@@ -20,7 +20,7 @@ def import_model():
     os.system('cls||clear')
     return model
 
-def save_image(image_data, filename = '/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/services/received_img.png'):
+def save_image(image_data, filename = './services/received_img.png'):
     image_data = image_data.split(',')[1]
     image_binary = base64.b64decode(image_data)
     image = Image.open(io.BytesIO(image_binary))
@@ -32,7 +32,8 @@ def png_to_base64(png_file):
 
 def import_data():
     try:
-        with open('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img/data.json', 'r') as file:
+        current_path = os.getcwd()        
+        with open(os.path.join(current_path, "app", "data", "img", "data.json"), 'r') as file:
             return json.load(file)
     except Exception as err:
         print(f"FOUND ERROR From import_data(): {err}")
@@ -53,8 +54,8 @@ def get_face_embedding(img_path, model):
     return face_embeddings
 
 def save_personal_data(img_path, model, personal_data):
-    embedding = get_face_embedding(img_path, model)
-    with open('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img/data.json', 'r', encoding = 'utf-8') as file:
+    data_path = os.path.join(os.getcwd(), "app", "data", "img", "data.json")
+    with open(data_path, 'r', encoding = 'utf-8') as file:
         exist_data = json.load(file)
     
     for file in os.listdir(img_path):
@@ -68,8 +69,9 @@ def save_personal_data(img_path, model, personal_data):
             data.update({key: value})
         exist_data.append(data)
 
-    with open('/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/img/data.json', 'w', encoding = 'utf-8') as f:
-        json.dumps(exist_data, f)
+    print(exist_data)
+    with open(data_path, 'w', encoding = 'utf-8') as f:
+        json.dump(exist_data, f)
 
 
 def detect_nums_of_people(img_path, model):
@@ -334,12 +336,14 @@ def extract_data(data):
 
 # -----------------------------READ FILE DOCX----------------------------------
 def b64_to_docx(text):
+    save_path = os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.doc")
     docx_data = base64.b64decode(text)
-    with open("/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/lichTuan/lichTuan.docx", "wb") as file:
+    with open(save_path, "wb") as file:
         file.write(docx_data)
 
 
-def read_docx(file_path = "/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/lichTuan/lichTuan.docx"):
+def read_docx():
+    file_path = os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.doc")
     doc = docx.Document(file_path)
     full_text = []
 
@@ -412,6 +416,7 @@ def parse_schedule(text):
 
     return schedule
 
-def save_to_json(schedule, output_file = "/home/rtx/Desktop/ai-team/PTIT-AI-receptionist/app/data/lichTuan/lichTuan.json"):
+def save_to_json(schedule):
+    output_file = os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.json")
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(schedule, f, ensure_ascii=False, indent=4)
