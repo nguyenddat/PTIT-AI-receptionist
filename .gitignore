@@ -1,0 +1,6 @@
+.png
+.txt
+.docx
+data/
+database/user.db
+__pycache__
