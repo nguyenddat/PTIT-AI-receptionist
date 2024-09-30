@@ -335,88 +335,96 @@ def extract_data(data):
     return data_extract
 
 # -----------------------------READ FILE DOCX----------------------------------
-def b64_to_docx(text):
-    save_path = os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.doc")
-    docx_data = base64.b64decode(text)
-    with open(save_path, "wb") as file:
-        file.write(docx_data)
+def save_to_json(data):
+    with open(os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.json"), 'w', encoding = 'utf-8') as file:
+        json.dump(data, file, ensure_ascii = False, indent = 4)
+        
+def check(text):
+    time_pattern = re.compile(r"\b\d{2}\.\d{2}\b")
+    tp_pattern = re.compile(r"TP: [^\n]*")
+    dd_pattern = re.compile(r"DD: [^\n]*")
+    cb_pattern = re.compile(r"C/b: [^\n]*")
+    
+    if re.search(time_pattern, text):
+        return "time"
 
+    if re.search(tp_pattern, text):
+        return "attendees"
+    
+    if re.search(dd_pattern, text):
+            return "location"
+        
+    if re.search(cb_pattern, text):
+            return "preparation"
+    return ""
 
-def read_docx():
-    file_path = os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.doc")
-    doc = docx.Document(file_path)
-    full_text = []
-
-    for para in doc.paragraphs:
-        if para.text.strip():
-            full_text.append(para.text.strip())
-
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                cell_text = cell.text.strip()
-                if cell_text:
-                    full_text.append(cell_text)
-
-    return '\n'.join(full_text)
-
-def parse_schedule(text):
-    date_pattern = r'(Thứ\s+\w+,?\s*ngày\s+\d{1,2}/\d{1,2})'
-    time_event_pattern = r'(\d{2}[:.]\d{2}): (.+)'
-    location_pattern = r'DD: (.+)'
-    attendees_pattern = r'TP: (.+)'
-    preparation_pattern = r'C/b: (.+)'
-
-    schedule = []
-    current_date = ""
-    current_event = None
-    unique_events = set()
-
-    lines = text.split("\n")
-
-    for line in lines:
-        date_match = re.search(date_pattern, line)
-        if date_match:
-            current_date = date_match.group(1).replace("  ", " ")  
-            continue
-
-        time_event_match = re.search(time_event_pattern, line)
-        if time_event_match:
-            if current_event:
-                event_tuple = tuple(sorted(current_event.items()))
-                if event_tuple not in unique_events:
-                    schedule.append(current_event)
-                    unique_events.add(event_tuple)
+def extract_events_from_doc(file_path):
+    date_pattern = re.compile(r"Thứ\s*[A-Za-zÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯẮẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưắạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỡợỤỦỨỪỬỮỰỲỴÝỶỸấầẩẫậắằẳẵặẹẻẽềểểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]+,\s*ngày\s*\d{1,2}/\d{1,2}")
+    time_pattern = re.compile(r"\b\d{2}\.\d{2}\b")
+    tp_pattern = re.compile(r"TP: [^\n]*")
+    dd_pattern = re.compile(r"DD: [^\n]*")
+    cb_pattern = re.compile(r"C/b: [^\n]*")
+    
+    events = []
+    current_event = {}
+    current_day: str = None
+    document = docx.Document(file_path)
+    for table in document.tables:
+        rows = table.rows
+        for row in rows:
+            first_cell = row.cells[0].text.strip()
+            second_cell = row.cells[1].text.strip()
             
-            current_event = {
-                'date': current_date,
-                'time': time_event_match.group(1),
-                'event': time_event_match.group(2).strip(),
-                'location': '',
-                'attendees': '',
-                'preparation': ''
-            }
-        elif current_event:
-            location_match = re.search(location_pattern, line)
-            if location_match:
-                current_event['location'] = location_match.group(1).strip()
+            if re.search(date_pattern, first_cell):
+                current_day = first_cell
+        
+                continue
             
-            attendees_match = re.search(attendees_pattern, line)
-            if attendees_match:
-                current_event['attendees'] = attendees_match.group(1).strip()
+            for line in first_cell.split("\n"):
+                if check(line) == "location":
+                    current_event.update({"location": line.split(": ")[1]})
+                    current_event.update({"date": current_day})
+                    events.append(current_event)
+                    current_event = {}
+                    continue
+
+                if check(line) == "time":
+                    temp = line.split(": ")
+                    current_event.update({"time": temp[0]})
+                    current_event.update({"name": temp[1]})
+                    continue
             
-            preparation_match = re.search(preparation_pattern, line)
-            if preparation_match:
-                current_event['preparation'] = preparation_match.group(1).strip()
+                temp = line.split(": ")
+                if len(temp) == 2:
+                    current_event.update({check(line): temp[1]})
+                    continue
 
-    if current_event:
-        event_tuple = tuple(sorted(current_event.items()))
-        if event_tuple not in unique_events:
-            schedule.append(current_event)
+            for line in second_cell.split("\n"):
+                if check(line) == "location":
+                    current_event.update({"location": line.split(": ")[1]})
+                    current_event.update({"date": current_day})
+                    events.append(current_event)
+                    current_event = {}
+            
+            
+            
+                    continue
 
-    return schedule
+                if check(line) == "time":
+                    temp = line.split(": ")
+                    current_event.update({"time": temp[0]})
+                    current_event.update({"name": temp[1]})
+            
+            
+                    continue
+            
+                temp = line.split(": ")
+                if len(temp) == 2:
+                    current_event.update({check(line): temp[1]})
+            
+                    continue
+    save_to_json(events)  
 
-def save_to_json(schedule):
-    output_file = os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.json")
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(schedule, f, ensure_ascii=False, indent=4)
+def import_lichTuan():
+    with open(os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.json"), 'r') as file:
+        return json.load(file)

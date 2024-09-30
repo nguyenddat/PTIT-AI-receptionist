@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 current_path = os.getcwd()
-database_path = os.path.join(current_path, "app", "database", "user.db")
+database_path = os.path.join(current_path, "app", "database", "kiosk.db")
 DATABASE_URL = "sqlite:///" + database_path  
 
 engine = create_engine(
@@ -14,3 +14,10 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

@@ -39,46 +39,53 @@ async def post_personal_img(
     os.makedirs(save_img_path)
     try: 
         for img in b64_img:
-            img_path = os.path.join(save_img_path, f'{name} {str(id)}.png')
+            img_path = os.path.join(save_img_path, f'{name} {id}.png')
             save_image(img, img_path)
-            print(f"Lưu thành công ảnh: {name} {str(id)}.png")
+            print(f"Lưu thành công ảnh: {name} {id}.png")
+            with open(os.path.join(save_img_path, f'{name} {id} base64.txt'), 'w') as file:
+                file.write(img)
+        save_personal_data(save_img_path, model, personal_data)
+        faces_data = import_data()
     except Exception as err:
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail = f"ERROR: {err}"
         )
-    finally:
-        try:
-            save_personal_data(save_img_path, model, personal_data)
-            print(save_img_path)
-            faces_data = import_data()
-        except Exception as err:
-            raise HTTPException(
-                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail = f"ERROR: {err}"
-            )
-
+        
 @router.get("/api/get-all-data")
 async def get_all_data():
-    current_path = os.getcwd()
-    try:
-        data_return = []
-        for face in faces_data:
-            image_data = []
-            identity_code = face["Identity Code"]
-            path = os.path.join(current_path, "app", "data", "img", identity_code)
-            for file in os.listdir(path):
-                if file.endswith('.png'):
-                    image_data.append(png_to_base64(os.path.join(path, file)))
-            data_return.append({
-                "name": face["Name"],
-                "identity_code": identity_code,
-                "role": face["role"],
-                "dob": face["DOB"],
-                "gender": face["Gender"],
-                "image_data": image_data
-            })
-        return data_return, 200
-    except Exception as err:
-        print(f"STATUS CODE: 507 / {err}")
-        raise HTTPException(status_code = 507, detail = err)
+    from collections import defaultdict
+    import json
+
+    current_path = os.getcwd()    
+    normalized_data = defaultdict(lambda: {
+        "embedding": [],
+        "Identity Code": None,
+        "Name": None,
+        "DOB": None,
+        "Gender": None,
+        "role": None
+    })
+
+    for entry in faces_data:
+        identity_code = entry["Identity Code"]
+        normalized_data[identity_code]["identity_code"] = entry["Identity Code"]
+        normalized_data[identity_code]["name"] = entry["Name"]
+        normalized_data[identity_code]["dob"] = entry["DOB"]
+        normalized_data[identity_code]["gender"] = entry["Gender"]
+        normalized_data[identity_code]["role"] = entry["role"]
+
+    final_data = list(normalized_data.values())
+
+    for i in range(len(final_data)):
+        person = final_data[i]
+        identity = person["identity_code"]
+        b64 = []
+        path = os.path.join(os.getcwd(), "app", "data", "img", identity)
+        for file in os.listdir(path):
+            if file.endswith("base64.txt"):
+                with open(os.path.join(path, file), 'r') as file:
+                    b64.append(file.read())
+        person["b64"] = b64
+        final_data[i] = person
+    return final_data, 200
