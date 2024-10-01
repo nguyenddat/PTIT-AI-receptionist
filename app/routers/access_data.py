@@ -47,6 +47,7 @@ async def post_personal_img(
         save_personal_data(save_img_path, model, personal_data)
         faces_data = import_data()
     except Exception as err:
+        os.rmdir(save_img_path)
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail = f"ERROR: {err}"
