@@ -69,5 +69,7 @@ def extract_lichThucHanh_from_xlsx(file_path):
         results += result[3:]
     with open(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.json"), 'w') as file:
         json.dump(results, file, ensure_ascii=False, indent = 4)
-
-extract_lichThucHanh_from_xlsx(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.xlsx"))
+        
+def import_lichThucHanh():
+    with open(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.json"), 'r') as file:
+        return json.load(file)

@@ -11,7 +11,7 @@ lichTuan = import_lichTuan()
 
 @router.post("/api/post-lich-tuan")
 def post_lich_tuan(file: UploadFile = File(...)):
-    if not data:
+    if not file:
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST, 
             detail = "Không có dữ liệu"

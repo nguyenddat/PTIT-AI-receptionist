@@ -60,17 +60,17 @@ def save_personal_data(img_path, model, personal_data):
         exist_data = json.load(file)
     
     for file in os.listdir(img_path):
-        path = os.path.join(img_path, file)
-        embedding = get_face_embedding(path, model)[0]
-        embed_path = os.path.join(img_path, f'{file[:len(file)-4:]}.txt')
-        data = {'embedding': embed_path}
-        np.savetxt(embed_path, embedding)
-        
-        for key, value in personal_data.items():
-            data.update({key: value})
-        exist_data.append(data)
+        if file.endswith(".png"):
+            path = os.path.join(img_path, file)
+            embedding = get_face_embedding(path, model)[0]
+            embed_path = os.path.join(img_path, f'{file[:len(file)-4:]}.txt')
+            data = {'embedding': embed_path}
+            np.savetxt(embed_path, embedding)
+            
+            for key, value in personal_data.items():
+                data.update({key: value})
+            exist_data.append(data)
 
-    print(exist_data)
     with open(data_path, 'w', encoding = 'utf-8') as f:
         json.dump(exist_data, f)
 

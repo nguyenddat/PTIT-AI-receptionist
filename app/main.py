@@ -3,7 +3,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from internal import admin 
-from routers import face_recognition, access_data, lich_tuan, auth, lichThucHanh
+from routers import face_recognition, access_data, lich_tuan, auth, lichThucHanh, event
 from database.database import engine, Base 
 
 app = FastAPI()
@@ -14,7 +14,7 @@ app.include_router(access_data.router)
 app.include_router(lich_tuan.router)
 app.include_router(auth.router)
 app.include_router(lichThucHanh.router)
-
+app.include_router(event.router)
 
 app.add_middleware(
     CORSMiddleware, 

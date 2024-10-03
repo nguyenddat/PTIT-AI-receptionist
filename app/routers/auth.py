@@ -23,7 +23,7 @@ def verify_token(authorization: str = Header(...), db: Session = Depends(get_db)
 
     try:
         # Decode token
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

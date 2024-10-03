@@ -30,22 +30,22 @@ async def post_personal_img(
     current_path = os.getcwd()
     save_img_path = os.path.join(current_path, "app", "data", "img", personal_id)
     if os.path.exists(save_img_path):
-        raise HTTPException(
-            status_code = status.HTTP_409_CONFLICT, 
-            detail = "Thông tin của quý khách đã tồn tại!"
-        )
+        return {"response": "Request thành công"}, 200
     
-    id = 0
     os.makedirs(save_img_path)
-    try: 
+    try:
+        id = 0 
         for img in b64_img:
+            print(name)
             img_path = os.path.join(save_img_path, f'{name} {id}.png')
             save_image(img, img_path)
             print(f"Lưu thành công ảnh: {name} {id}.png")
             with open(os.path.join(save_img_path, f'{name} {id} base64.txt'), 'w') as file:
                 file.write(img)
+            id += 1
         save_personal_data(save_img_path, model, personal_data)
         faces_data = import_data()
+        return {"response": "Request thành công"}, 200
     except Exception as err:
         os.rmdir(save_img_path)
         raise HTTPException(
@@ -89,4 +89,5 @@ async def get_all_data():
                     b64.append(file.read())
         person["b64"] = b64
         final_data[i] = person
+    print(final_data[1])
     return final_data, 200
