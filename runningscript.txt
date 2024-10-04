@@ -1,0 +1,2 @@
+conda activate AI-receptionist
+python app/main.py 

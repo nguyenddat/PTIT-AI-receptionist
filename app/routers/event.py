@@ -16,12 +16,12 @@ def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), curr
     return db_event
 
 @router.get("/api/get-events/", response_model=List[schemas.EventOut])
-def read_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(verify_token)):
+def read_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     events = db.query(models.Event).offset(skip).limit(limit).all()
     return events 
 
 @router.get("/api/get-events/{event_id}", response_model=schemas.EventOut)
-def read_event(event_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(verify_token)):
+def read_event(event_id: int, db: Session = Depends(get_db)):
     event = db.query(models.Event).filter(models.Event.id == event_id).first()
     if event is None:
         raise HTTPException(status_code=404, detail="Sự kiện không tồn tại")

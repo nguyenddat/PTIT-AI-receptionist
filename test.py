@@ -1,75 +1,41 @@
 import pandas as pd
-import os 
-import numpy as np
-import json
+import time
+from datetime import datetime
 
-dataframe = pd.read_excel(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.xlsx"))
+xls = pd.ExcelFile("./test.xlsx")
+results = []
+du_lieu_sv = [1]
+du_lieu_lop_tin_chi = [0, 2, 3, 4, 5, 6, 7]
 
-def extract_lichThucHanh_from_xlsx(file_path):
-    xls = pd.ExcelFile(file_path)
-    results = []
-    for sheetname in xls.sheet_names:
-        dataframe = pd. read_excel(xls, sheetname)
+from app.database.database import get_db
+from app.database.models import SinhVien
 
-        dataframe = dataframe.iloc[3:].drop(dataframe.columns[0], axis = 1)
+import sqlite3
 
-        headers = []
-        cols_to_drop = []
-
-        for i in range(len(dataframe.columns)):
-            col = dataframe.columns[i]
-            header = dataframe[col].iloc[0]
-            
-            if header in ("Ghi chú", "Tháng", "Hệ"):
-                cols_to_drop.append(col)
-
-        dataframe = dataframe.drop(columns = cols_to_drop)
-
-
-        current_month: str = None
-        for col in dataframe.columns:
-            col_3_row = dataframe[col].iloc[0:3]
-            first_cell = col_3_row.iloc[0]
-            second_cell =  col_3_row.iloc[1]
-            third_cell = col_3_row.iloc[2]
-            
-            if not pd.isna(first_cell):
-                current_month = first_cell
-                if not pd.isna(second_cell) and second_cell != first_cell:
-                    if not pd.isna(third_cell) and third_cell != second_cell:
-                        headers.append("-".join([str(second_cell), str(third_cell), str(first_cell)]))
-                    else:
-                        headers.append("-".join([str(second_cell), str(first_cell)]))
-                else:
-                    headers.append(str(first_cell))
+_ = {}
+categories = [SinhVien.ma_sinh_vien, SinhVien.gioi_tinh, SinhVien.quoc_tich, SinhVien.dan_toc, SinhVien.ton_giao, SinhVien.ngay_sinh, SinhVien.cccd]
+for i in du_lieu_sv:
+    sheetname = xls.sheet_names[i]
+    df = pd.read_excel(xls, sheetname, dtype = str)
+    for index, row in df.iterrows():
+        i = 0
+        for col in df.columns:
+            value = str(row[col])
+            category = categories[i]
+            if value == "nan":
+                if i == 6:
+                    i = 0
+                else:   
+                    i += 1
+                continue
+            if i == 5:
+                value = datetime.strptime(value, "%d/%m/%Y").date()
+            _.update({categories[i]: value})
+            if i == 6:
+                i = 0
             else:
-                first_cell = current_month
-                if not pd.isna(second_cell) and second_cell != first_cell:
-                    if not pd.isna(third_cell) and third_cell != second_cell:
-                        headers.append("-".join([str(second_cell), str(third_cell), str(first_cell)]))
-                    else:
-                        headers.append("-".join([str(second_cell), str(first_cell)]))
-                else:
-                    headers.append("")
-        result = []
-        for index, row in dataframe.iterrows():
-            _class = {}
-            if index > 2:
-                for i in range(len(dataframe.iloc[3:].columns)):
-                    col = dataframe.columns[i]
-                    
-                    value = row.iloc[i]
-                    if pd.isna(value):
-                        continue
-                        
-                    
-                    if headers[i] != "":
-                        _class.update({headers[i]: value})
-            result.append(_class)
-        results += result[3:]
-    with open(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.json"), 'w') as file:
-        json.dump(results, file, ensure_ascii=False, indent = 4)
-        
-def import_lichThucHanh():
-    with open(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.json"), 'r') as file:
-        return json.load(file)
+                i += 1
+        insert_into_table(SinhVien, _)
+        print("Insert thanh cong: ", _[SinhVien.ma_sinh_vien])
+        _ = {}
+        time.sleep(1)

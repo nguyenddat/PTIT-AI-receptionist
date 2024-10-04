@@ -32,3 +32,18 @@ class EventOut(BaseModel):
     
     class Config:
         orm_mode = True
+    
+# telegram bot
+class CCCDInfo(BaseModel):
+    identityCode: str
+    name: str
+    dob: str
+    gender: str
+
+class ContactCreate(BaseModel):
+    isAppointment: bool
+    appointmentTime: str
+    department: str
+    phoneNumber: str
+    note: str
+    cccdInfo: CCCDInfo

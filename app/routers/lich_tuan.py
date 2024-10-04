@@ -25,11 +25,11 @@ def post_lich_tuan(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
         return {"response": "Upload file successfully"}, 200
     except Exception as err:
-        raise HTTPException(status_code = HTTP_500_INTERNAL_SERVER_ERROR, detail = err )
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = err )
     finally:
         extract_events_from_doc(file_path)
         lichTuan = import_lichTuan()
 
 @router.get("/api/get-lich-tuan")
 def get_lich_tuan():
-    return lichTuan, 200
+    return import_lichTuan(), 200

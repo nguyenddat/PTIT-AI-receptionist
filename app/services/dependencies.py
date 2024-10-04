@@ -13,6 +13,9 @@ from collections import Counter
 
 from insightface.app import FaceAnalysis
 from insightface.data import get_image
+from datetime import datetime
+import re
+
 
 # -------------------------------------SERVICES----------------------------------------------
 def import_model():
@@ -424,7 +427,40 @@ def extract_events_from_doc(file_path):
                     current_event.update({check(line): temp[1]})
             
                     continue
-    save_to_json(events)  
+    save_to_json(format_events(events))  
+    
+def format_events(events):
+    formatted_events = []
+    current_year = datetime.now().year
+    
+    for event in events:
+        formatted_event = event.copy()
+        
+        # Extract date
+        date_match = re.search(r"Thứ [^,]+, ngày (\d{1,2})/(\d{1,2})", event['date'])
+        if date_match:
+            day, month = map(int, date_match.groups())
+            
+            # Extract time
+            time_parts = event['time'].split('.')
+            hour, minute = map(int, time_parts)
+            
+            # Create ISO datetime
+            try:
+                dt = datetime(current_year, month, day, hour, minute)
+                formatted_event['iso_datetime'] = dt.isoformat()
+                
+                # Remove separate date and time fields if desired
+                del formatted_event['date']
+                del formatted_event['time']
+                
+            except ValueError as e:
+                print(f"Error processing date/time for event: {e}")
+                formatted_event['iso_datetime'] = None
+        
+        formatted_events.append(formatted_event)
+    
+    return formatted_events
 
 def import_lichTuan():
     with open(os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.json"), 'r') as file:
@@ -499,3 +535,25 @@ def extract_lichThucHanh_from_xlsx(file_path):
 def import_lichThucHanh():
     with open(os.path.join(os.getcwd(), "app", "data", "lichThucHanh", "lichThucHanh.json"), 'r') as file:
         return json.load(file)
+
+def convertDepartment(department: str):
+    if department == "bld":
+        return "Ban lãnh đạo"
+    elif department == "phongTh":
+        return "Phòng tổng hợp"
+    elif department == "phongKhcnvkhcd":
+        return "Phòng Khoa học công nghệ và Kế hoạch kinh doanh"
+    elif department == "phongTvtk":
+        return "Phòng tư vấn thiết kế"
+    elif department == "phongNckyvdvvt":
+        return "Phòng nghiên cứu kỹ thuật và dịch vụ viễn thông"
+    elif department == "phongDlkdvtccl":
+        return "Phòng đo lường kiểm định và tiêu chuẩn chất lượng"
+    elif department == "phongUdvcgcns":
+        return "Phòng ứng dụng và chuyển giao công nghệ số"
+    elif department == "phongNcptcns":
+        return "Phòng nghiên cứu phát triển công nghệ số"
+    elif department == "cs2":
+        return "Cơ sở 2 của Viện tại TP.Hồ Chí Minh"
+    else:
+        return "Không xác định"
