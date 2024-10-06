@@ -128,8 +128,9 @@ Sinh viên - Nhóm tín chỉ bao gồm:
 
 class SinhVien_NhomTinChi(Base):
     __tablename__ = "sinhvien_nhomtinchi"
-    ma_sinh_vien = Column(String, ForeignKey(SinhVien.ma_sinh_vien), primary_key = True)
-    ma_nhom_tin_chi = Column(String, ForeignKey(NhomTinChi.ma_nhom_tin_chi), primary_key = True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ma_sinh_vien = Column(String, ForeignKey(SinhVien.ma_sinh_vien))
+    ma_nhom_tin_chi = Column(String, ForeignKey(NhomTinChi.ma_nhom_tin_chi))
     
 
 hoc_phan = relationship("HocPhan", back_populates = "lop_tin_chi")
