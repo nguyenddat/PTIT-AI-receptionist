@@ -25,7 +25,7 @@ def post_lich_thuc_hanh(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
         return {"response": "Upload file successfully"}, 200
     except Exception as err:
-        raise HTTPException(status_code = HTTP_500_INTERNAL_SERVER_ERROR, detail = err )
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = err )
     finally:
         extract_lichThucHanh_from_xlsx(file_path)
         lichTuan = import_lichThucHanh()

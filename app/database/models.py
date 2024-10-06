@@ -12,7 +12,7 @@ class UserOut(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
@@ -52,13 +52,24 @@ class SinhVien(Base):
     __tablename__ = "sinhvien"
     ma_sinh_vien = Column(String, primary_key = True, index = True)
     ho_ten = Column(String)
-    gioi_tinh = Column(String)
-    quoc_tich = Column(String)
+    lop_hanh_chinh = Column(String)
     dan_toc = Column(String)
     ton_giao = Column(String)
-    ngay_sinh = Column(Date)
     cccd = Column(String, unique = True)
-    lop_hanh_chinh = Column(String)
+    ngay_sinh = Column(Date)
+    gioi_tinh = Column(String)
+    quoc_tich = Column(String)
+
+class CanBo(Base):
+    __tablename__ = "canbo"
+    ma_can_bo = Column(String, primary_key = True, index = True)
+    ho_ten = Column(String)
+    loai_giao_vien = Column(String)
+    cccd = Column(String, unique = True)
+    ngay_sinh = Column(Date)
+    gioi_tinh = Column(String)
+    quoc_tich = Column(String)
+
 '''
 --------------------------------------------------------------
 Một lớp tín chỉ có một học phần
@@ -84,7 +95,6 @@ class HocPhan(Base):
     ten_hoc_phan = Column(String)
     so_tin_chi = Column(Integer)
     
-
 class LopTinChi(Base):
     __tablename__ = "loptinchi"
     ma_lop_tin_chi = Column(String, primary_key = True, index = True)
@@ -110,6 +120,7 @@ class NhomTinChi(Base):
     ma_nhom_tin_chi = Column(String, primary_key = True, index = True)
     ma_lop_tin_chi = Column(String, ForeignKey(LopTinChi.ma_lop_tin_chi), nullable = False)
     thu_tu_nhom = Column(String)
+    si_so_toi_da = Column(Integer)
     lich_thuc_hanh = Column(String)
     
 
@@ -129,9 +140,14 @@ Sinh viên - Nhóm tín chỉ bao gồm:
 class SinhVien_NhomTinChi(Base):
     __tablename__ = "sinhvien_nhomtinchi"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    ma_sinh_vien = Column(String, ForeignKey(SinhVien.ma_sinh_vien))
-    ma_nhom_tin_chi = Column(String, ForeignKey(NhomTinChi.ma_nhom_tin_chi))
-    
+    ma_sinh_vien = Column(String, ForeignKey(SinhVien.ma_sinh_vien), nullable= False)
+    ma_nhom_tin_chi = Column(String, ForeignKey(NhomTinChi.ma_nhom_tin_chi), nullable= False)
+
+class CanBo_LopTinChi(Base):
+    __tablename__ = "canbo_nhomtinchi"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ma_can_bo = Column(String, ForeignKey(CanBo.ma_can_bo), nullable= False)
+    ma_lop_tin_chi = Column(String, ForeignKey(LopTinChi.ma_lop_tin_chi), nullable= False) 
 
 hoc_phan = relationship("HocPhan", back_populates = "lop_tin_chi")
 nhom_tin_chi = relationship("NhomTinChi", back_populates = "lop_tin_chi")
@@ -140,5 +156,5 @@ sinh_vien = relationship("SinhVien", back_populates = "nhom_tin_chi")
 nhom_tin_chi = relationship("NhomTinChi", back_populates = "sinh_vien")
 lop_tin_chi = relationship("LopTinChi", back_populates = "nhom_tin_chi")
 sinh_vien = relationship("SinhVien_LopTinChi", back_populates = "nhom_tin_chi")
-    
+
     

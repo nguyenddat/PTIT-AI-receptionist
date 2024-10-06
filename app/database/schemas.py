@@ -11,7 +11,7 @@ class UserOut(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
@@ -31,7 +31,7 @@ class EventOut(BaseModel):
     location: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
     
 # telegram bot
 class CCCDInfo(BaseModel):

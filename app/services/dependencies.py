@@ -25,10 +25,14 @@ def import_model():
     return model
 
 def save_image(image_data, filename = './services/received_img.png'):
-    image_data = image_data.split(',')[1]
-    image_binary = base64.b64decode(image_data)
-    image = Image.open(io.BytesIO(image_binary))
-    image.save(filename)
+    temp = image_data.split(",")
+    if len(temp) != 2:
+        print("KO TACH DUOC ,")
+    else:
+        image_data = image_data.split(',')[1]
+        image_binary = base64.b64decode(image_data)
+        image = Image.open(io.BytesIO(image_binary))
+        image.save(filename)
 
 def png_to_base64(png_file):
     with open(png_file, "rb") as file:
@@ -65,6 +69,7 @@ def save_personal_data(img_path, model, personal_data):
     for file in os.listdir(img_path):
         if file.endswith(".png"):
             path = os.path.join(img_path, file)
+            print(path)
             embedding = get_face_embedding(path, model)[0]
             embed_path = os.path.join(img_path, f'{file[:len(file)-4:]}.txt')
             data = {'embedding': embed_path}
@@ -341,7 +346,7 @@ def extract_data(data):
 # -----------------------------READ FILE DOCX----------------------------------
 def save_to_json(data):
     with open(os.path.join(os.getcwd(), "app", "data", "lichTuan", "lichTuan.json"), 'w', encoding = 'utf-8') as file:
-        json.dump(data, file, ensure_ascii = False, indent = 4)
+        json.dump(data, file, indent = 4)
         
 def check(text):
     time_pattern = re.compile(r"\b\d{2}\.\d{2}\b")

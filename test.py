@@ -7,20 +7,52 @@ from datetime import datetime
 def get_conn():
     conn = sqlite3.connect(os.path.join(os.getcwd(), "app", "database", "kiosk.db"))
     return conn
+def insert_sinhvien():
+    xls = pd.ExcelFile("./test.xlsx")
+    conn = get_conn()
+    cursor = conn.cursor()
 
-xls = pd.ExcelFile("./test.xlsx")
-results = []
-du_lieu_sv = [1]
-du_lieu_lop_tin_chi = [0, 2, 3, 4, 5, 6, 7]
+    cate = {
+        0: "ma_sinh_vien",
+        1: "gioi_tinh",
+        2: "quoc_tich",
+        3: "dan_toc",
+        4: "ton_giao",
+        5: "ngay_sinh",
+        6: "cccd"
+    }
+
+    sheetname = xls.sheet_names[1]
+    df = pd.read_excel(xls, sheetname, dtype = str)
+    for index, row in df.iterrows():
+        id = 0
+        sinh_vien = {}
+        for col in df.columns:
+            value = str(row[col])
+            if value == "nan":
+                id += 1
+                continue
+            ca = cate[id]
+            if ca == "ngay_sinh":
+                value = datetime.strptime(value, "%d/%m/%Y").date()
+            sinh_vien.update({ca: value})
+            id += 1
+        cursor.execute(f'''INSERT OR IGNORE
+                       INTO SinhVien ({", ".join([_ for _ in sinh_vien.keys()])}) VALUES
+                       ({", ".join(["?" for _ in sinh_vien.keys()])})
+                       ''', tuple(sinh_vien.values()))
+        conn.commit()
+        print(f"INSERT THANH CONG {sinh_vien['ma_sinh_vien']}")
+        print()
+        time.sleep(0.2)
+    conn.close()
+
 def insert():
+    xls = pd.ExcelFile("./test.xlsx")
+    du_lieu_lop_tin_chi = [0, 2, 3, 4, 5, 6, 7]
     conn = get_conn()
     cursor = conn.cursor()
     cate : dict = None
-    sinhvien = {}
-    hocphan = {}
-    loptinchi = {}
-    nhomtinchi = {}
-    sinhvien_nhomtinchi = {}
     id = 0
     for i in du_lieu_lop_tin_chi:
         if i == 0:
@@ -51,6 +83,11 @@ def insert():
         sheetname = xls.sheet_names[i]
         df = pd.read_excel(xls, sheetname, dtype = str)
         for index, row in df.iterrows():
+            sinhvien = {}
+            hocphan = {}
+            loptinchi = {}
+            nhomtinchi = {}
+            sinhvien_nhomtinchi = {}
             for col in df.columns:
                 check = cate[id]
                 table = check[0]
@@ -113,7 +150,6 @@ def insert():
             conn.commit()
             print(f"Luu thanh cong hoc phan {hocphan['ten_hoc_phan']}")
             
-            
             cursor.execute(f'''INSERT OR IGNORE
                         INTO LopTinChi ({", ".join([x for x in loptinchi.keys()])}) VALUES 
                         ({", ".join(["?" for _ in loptinchi.keys()])})''', 
@@ -132,15 +168,77 @@ def insert():
                         INTO SinhVien_NhomTinChi ({", ".join([x for x in sinhvien_nhomtinchi.keys()])}) VALUES 
                         ({", ".join(["?" for _ in sinhvien_nhomtinchi.keys()])})''', 
                         tuple(sinhvien_nhomtinchi.values()))
-            
             conn.commit()
             print(f"Luu thanh cong sinh vien - nhom tin chi")
-
             print()
-            sinhvien = {}
-            hocphan = {}
+            time.sleep(0.3)
+    conn.close()
+
+def inser_canbo():
+    xls = pd.ExcelFile("./test2.xlsx")
+    conn = get_conn()
+    cursor = conn.cursor()
+    cate = {
+        1: "ma_hoc_phan",
+        5: "thu_tu_lop",
+        6: "thu_tu_nhom",
+        7: "si_so_toi_da",
+        9: "ma_can_bo",
+        10: "ho_ten",
+        11: "loai_giao_vien"
+    }
+    for i in range(2):
+        sheetname = xls.sheet_names[i]
+        df = pd.read_excel(xls, sheetname, dtype = str)
+        for index, row in df.iterrows():
+            id = 0
             loptinchi = {}
+            canbo = {}
             nhomtinchi = {}
-            sinhvien_nhomtinchi = {}
-            
-    
+            for col in df.columns:
+                if id not in cate.keys():
+                    id += 1
+                    continue
+                value = str(row[col])
+                if value == "nan":
+                    id += 1
+                    continue
+                ca = cate[id]
+                if id in (1, 5, 9):
+                    loptinchi.update({ca: value})
+                if id in (6, 7):
+                    nhomtinchi.update({ca: value})
+                if id in (9, 10, 11):
+                    canbo.update({ca: value})
+                id += 1
+
+            cursor.execute(f'''INSERT OR IGNORE
+                           INTO CanBo ({", ".join([_ for _ in canbo.keys()])}) VALUES
+                            ({", ".join(["?" for _ in canbo.keys()])})''', tuple(canbo.values()))
+            conn.commit()
+            print(f"INSERT: {canbo['ho_ten']}")
+
+            cursor.execute(f'''INSERT 
+                           INTO CanBo_LopTinChi (ma_can_bo, ma_lop_tin_chi) VALUES
+                           (?, ?)''',
+                            (loptinchi["ma_can_bo"], f'{loptinchi["ma_hoc_phan"]}-{loptinchi["thu_tu_lop"]}'))
+            conn.commit()
+            print(f"UPDATE: {loptinchi['ma_hoc_phan']}")
+
+            if "thu_tu_nhom" in nhomtinchi.keys():
+                temp = nhomtinchi["thu_tu_nhom"]
+            else:
+                temp = "00"
+            cursor.execute(f'''UPDATE NhomTinChi
+                           SET si_so_toi_da = ?
+                           WHERE ma_lop_tin_chi = ? AND thu_tu_nhom = ?''',
+                           (nhomtinchi["si_so_toi_da"], f'{loptinchi["ma_hoc_phan"]}-{loptinchi["thu_tu_lop"]}', temp))
+            conn.commit()
+            print(f"UPDATE THANH CONG")
+            time.sleep(0.1)
+            print()
+    conn.close()
+
+inser_canbo()
+
+
