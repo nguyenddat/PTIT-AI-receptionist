@@ -1,15 +1,14 @@
 import json
 import os
+import shutil
 from typing import List, AnyStr
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status
-
 from typing import Dict, List, AnyStr
-
+from collections import defaultdict
 from services.dependencies import import_data
 from services.dependencies import save_image, save_personal_data
-
 from services.base_model import ConnectionManager
-from services.dependencies import save_image, import_model, import_data, extract_data
+from services.dependencies import save_image, import_model, import_data, extract_data, get_conn
 from services.dependencies import face_recognition, detect_nums_of_people
 
 router = APIRouter()
@@ -51,11 +50,13 @@ async def get_identity(
         # list(str)
 ):
     global TARGET_WEBSOCKET, manager
+    if not TARGET_WEBSOCKET:
+        raise HTTPException(status_code = 503, detail = "Chưa có ai kết nối đến máy chủ!")
     try:
-        if not TARGET_WEBSOCKET:
-            raise HTTPException(status_code = 503, detail = "Chưa có ai kết nối đến máy chủ!")
-        
         decoded_data = extract_data(data)
+        conn = get_conn()
+        cursor = conn.cursor()
+        cursor.execute()
         await manager.send_response({
             "key": "cccd",
             "value": json.dumps(decoded_data)
@@ -69,39 +70,39 @@ async def post_personal_img(
     # DỮ LIỆU ĐƯỢC ĐỊNH DẠNG:
         # Dict(str: dict(str: list) || list(str) || str)
 ):
-    global faces_data
     if not data:
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST,
             detail = "Không có dữ liệu"
         )
+
+    global faces_data
     b64_img = data['b64_img']
     personal_data = data['cccd']
-    name = personal_data['Name']
     role =  data['role']
     personal_id = personal_data['Identity Code']
-    personal_data.update({'role': role})
-    
+    personal_data.update({'role': role})    
+
     current_path = os.getcwd()
     save_img_path = os.path.join(current_path, "app", "data", "img", personal_id)
     if os.path.exists(save_img_path):
         return {"response": "Request thành công"}, 200
-    
+
     os.makedirs(save_img_path)
     try:
         id = 0 
         for img in b64_img:
-            print(name)
-            img_path = os.path.join(save_img_path, f'{name} {id}.png')
+            img_path = os.path.join(save_img_path, f'{personal_id}_{id}.png')
             save_image(img, img_path)
-            print(f"Lưu thành công ảnh: {name} {id}.png")
-            with open(os.path.join(save_img_path, f'{name} {id} base64.txt'), 'w') as file:
+
+            print(f"Lưu thành công ảnh: {personal_id}_{id}.png")
+            with open(os.path.join(save_img_path, f'{personal_id}_{id}_base64.txt'), 'w') as file:
                 file.write(img)
             id += 1
         save_personal_data(save_img_path, model, personal_data)
         return {"response": "Request thành công"}, 200
     except Exception as err:
-        os.rmdir(save_img_path)
+        shutil.rmtree(save_img_path)
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail = f"ERROR: {err}"
@@ -111,10 +112,6 @@ async def post_personal_img(
 
 @router.get("/api/get-all-data")
 async def get_all_data():
-    from collections import defaultdict
-    import json
-
-    current_path = os.getcwd()    
     normalized_data = defaultdict(lambda: {
         "embedding": [],
         "Identity Code": None,

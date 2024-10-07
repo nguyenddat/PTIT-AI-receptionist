@@ -240,5 +240,6 @@ def inser_canbo():
     conn.close()
 
 inser_canbo()
-
+insert()
+insert_sinhvien()
 

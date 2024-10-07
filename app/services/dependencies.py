@@ -7,6 +7,8 @@ import json
 import pandas as pd
 import base64
 import codecs
+import sqlite3
+from sqlalchemy import text
 import numpy as np
 from PIL import Image
 from collections import Counter
@@ -18,6 +20,10 @@ import re
 
 
 # -------------------------------------SERVICES----------------------------------------------
+def get_conn():
+    conn = sqlite3.connect(os.path.join(os.getcwd(), "app", "database", "kiosk.db"))
+    return conn
+
 def import_model():
     model = FaceAnalysis(name = 'buffalo_l')
     model.prepare(ctx_id = 0, det_size = (640, 640))
@@ -39,14 +45,24 @@ def png_to_base64(png_file):
         return base64.b64encode(file.read()).decode('utf-8')
 
 def import_data():
-    try:
-        current_path = os.getcwd()        
-        with open(os.path.join(current_path, "app", "data", "img", "data.json"), 'r') as file:
-            return json.load(file)
-    except Exception as err:
-        print(f"FOUND ERROR From import_data(): {err}")
-        return {}
+    conn = get_conn()
+    cursor = conn.cursor()
 
+    cursor.execute('''
+                   SELECT cccd FROM sinhvien WHERE du_lieu IS NOT NULL
+                   UNION
+                   SELECT cccd FROM canbo WHERE du_lieu IS NOT NULL
+                   UNION
+                   SELECT cccd FROM khach WHERE du_lieu IS NOT NULL''')
+    temp = cursor.fetchall()
+
+    result = []
+    for _ in temp:
+        cccd = list(_)[0]
+        path = os.path.join(os.getcwd(), "app", "data", "img", cccd, "data.json")
+        with open(path, 'r') as file:
+            result += json.load(file)
+    return result
 # --------------------------------------------------------FACE_RECOGNITION--------------------------------------------------
 
 def get_face_embedding(img_path, model):
@@ -62,26 +78,63 @@ def get_face_embedding(img_path, model):
     return face_embeddings
 
 def save_personal_data(img_path, model, personal_data):
-    data_path = os.path.join(os.getcwd(), "app", "data", "img", "data.json")
-    with open(data_path, 'r', encoding = 'utf-8') as file:
-        exist_data = json.load(file)
-    
+    cccd: str = None
+    role: str = None
+    name: str = None
+    conn = get_conn()
+    cursor = conn.cursor()
+    exist_data = []
     for file in os.listdir(img_path):
         if file.endswith(".png"):
             path = os.path.join(img_path, file)
             print(path)
+            print()
             embedding = get_face_embedding(path, model)[0]
             embed_path = os.path.join(img_path, f'{file[:len(file)-4:]}.txt')
             data = {'embedding': embed_path}
             np.savetxt(embed_path, embedding)
             
             for key, value in personal_data.items():
+                if key == "Identity Code":
+                    cccd = value
+                if key == 'role':
+                    role = value
+                if key == 'Name':
+                    name = value
                 data.update({key: value})
             exist_data.append(data)
 
+    data_path = os.path.join(os.getcwd(), "app", "data", "img", cccd, "data.json")
     with open(data_path, 'w', encoding = 'utf-8') as f:
         json.dump(exist_data, f)
 
+    print(cccd, name)
+    result = cursor.execute("SELECT * FROM sinhvien WHERE cccd = ?", (cccd,)).fetchone()
+    if result:
+        cursor.execute("UPDATE sinhvien SET du_lieu = True WHERE cccd = ?", (cccd,))
+        conn.commit()
+        conn.close()
+        return "Đã cập nhật du_lieu trong bảng sinhvien"
+
+    result = cursor.execute("SELECT * FROM canbo WHERE cccd = ?", (cccd,)).fetchone()
+    if result:
+        cursor.execute("UPDATE canbo SET du_lieu = True WHERE cccd = ?", (cccd,))
+        conn.commit()
+        conn.close()
+        return "Đã cập nhật du_lieu trong bảng canbo"
+
+    result = cursor.execute("SELECT * FROM khach WHERE cccd = ?", (cccd,)).fetchone()
+    if result:
+        cursor.execute("UPDATE khach SET du_lieu = True WHERE cccd = ?", (cccd,))
+        conn.commit()
+        conn.close()
+        return "Đã cập nhật du_lieu trong bảng khach"
+    
+    cursor.execute('''INSERT INTO khach (cccd, ho_ten, du_lieu)
+        VALUES (?, ?, True)''', (cccd, name))
+    conn.commit()
+    conn.close()
+    return "Đã thêm dữ liệu mới vào bảng khach"
 
 def detect_nums_of_people(img_path, model):
     img = cv2.imread(img_path)

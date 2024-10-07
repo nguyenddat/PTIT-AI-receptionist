@@ -59,6 +59,7 @@ class SinhVien(Base):
     ngay_sinh = Column(Date)
     gioi_tinh = Column(String)
     quoc_tich = Column(String)
+    du_lieu = Column(Boolean)
 
 class CanBo(Base):
     __tablename__ = "canbo"
@@ -69,7 +70,14 @@ class CanBo(Base):
     ngay_sinh = Column(Date)
     gioi_tinh = Column(String)
     quoc_tich = Column(String)
+    du_lieu = Column(Boolean)
 
+class Khach(Base):
+    __tablename__ = "khach"
+    cccd = Column(String, primary_key = True, index = True)
+    ho_ten = Column(String)
+    du_lieu = Column(Boolean)
+    
 '''
 --------------------------------------------------------------
 Một lớp tín chỉ có một học phần
@@ -144,7 +152,7 @@ class SinhVien_NhomTinChi(Base):
     ma_nhom_tin_chi = Column(String, ForeignKey(NhomTinChi.ma_nhom_tin_chi), nullable= False)
 
 class CanBo_LopTinChi(Base):
-    __tablename__ = "canbo_nhomtinchi"
+    __tablename__ = "canbo_loptinchi"
     id = Column(Integer, primary_key=True, autoincrement=True)
     ma_can_bo = Column(String, ForeignKey(CanBo.ma_can_bo), nullable= False)
     ma_lop_tin_chi = Column(String, ForeignKey(LopTinChi.ma_lop_tin_chi), nullable= False) 

@@ -1,0 +1,26 @@
+[
+    {
+        "embedding": "D:\\hoc-AI-ML\\PTIT-AI-receptionist\\app\\data\\img\\001205020978\\001205020978_0.txt",
+        "Identity Code": "001205020978",
+        "Name": "Nguy\u1ec5n \u0110\u00ecnh \u0110\u1ea1t",
+        "DOB": "20/11/2005",
+        "Gender": "nam",
+        "role": "sinhVien"
+    },
+    {
+        "embedding": "D:\\hoc-AI-ML\\PTIT-AI-receptionist\\app\\data\\img\\001205020978\\001205020978_1.txt",
+        "Identity Code": "001205020978",
+        "Name": "Nguy\u1ec5n \u0110\u00ecnh \u0110\u1ea1t",
+        "DOB": "20/11/2005",
+        "Gender": "nam",
+        "role": "sinhVien"
+    },
+    {
+        "embedding": "D:\\hoc-AI-ML\\PTIT-AI-receptionist\\app\\data\\img\\001205020978\\001205020978_2.txt",
+        "Identity Code": "001205020978",
+        "Name": "Nguy\u1ec5n \u0110\u00ecnh \u0110\u1ea1t",
+        "DOB": "20/11/2005",
+        "Gender": "nam",
+        "role": "sinhVien"
+    }
+]

@@ -11,7 +11,7 @@ lichTuan = import_lichThucHanh()
 
 @router.post("/api/post-lich-thuc-hanh")
 def post_lich_thuc_hanh(file: UploadFile = File(...)):
-    if not data:
+    if not file:
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST, 
             detail = "Không có dữ liệu"
