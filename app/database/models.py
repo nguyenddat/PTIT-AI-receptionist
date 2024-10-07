@@ -128,8 +128,6 @@ class NhomTinChi(Base):
     ma_nhom_tin_chi = Column(String, primary_key = True, index = True)
     ma_lop_tin_chi = Column(String, ForeignKey(LopTinChi.ma_lop_tin_chi), nullable = False)
     thu_tu_nhom = Column(String)
-    si_so_toi_da = Column(Integer)
-    lich_thuc_hanh = Column(String)
     
 
 '''
@@ -156,6 +154,16 @@ class CanBo_LopTinChi(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     ma_can_bo = Column(String, ForeignKey(CanBo.ma_can_bo), nullable= False)
     ma_lop_tin_chi = Column(String, ForeignKey(LopTinChi.ma_lop_tin_chi), nullable= False) 
+
+class LichHoc(Base):
+    __tablename__ = "lichhoc"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ma_nhom_tin_chi = Column(String, ForeignKey(NhomTinChi.ma_nhom_tin_chi), nullable= False)
+    ngay_hoc = Column(String, nullable=False)
+    gio_bat_dau = Column(String, nullable=False)
+    gio_ket_thuc = Column(String, nullable=False)
+    tiet_bat_dau = Column(Integer, nullable=False)
+    so_tiet = Column(Integer, nullable=False)
 
 hoc_phan = relationship("HocPhan", back_populates = "lop_tin_chi")
 nhom_tin_chi = relationship("NhomTinChi", back_populates = "lop_tin_chi")

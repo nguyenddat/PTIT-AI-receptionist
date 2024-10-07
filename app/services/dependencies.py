@@ -191,8 +191,8 @@ def KNN(embedding, faces_data):
         return result
     except:
         result = {
-            "name": "Khách",
-            "role": "Khách"
+            "name": "khách",
+            "role": "GUEST"
         }
         print(f'Tìm thấy: {result}')
         return result
